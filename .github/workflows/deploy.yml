@@ -1,0 +1,87 @@
+name: Deploy with Blue/Green
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-next-app:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: Blue/Green Deploy on server via SSH
+        uses: appleboy/ssh-action@master
+        env:
+          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/my-next-app:latest
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            IMAGE="$DOCKER_IMAGE"
+            NGINX_CONF="/etc/nginx/conf.d/my-next-app.conf"
+
+            # 현재 nginx가 바라보는 포트 추출
+            CUR_PORT=$(grep -o 'proxy_pass http://localhost:[0-9]*' $NGINX_CONF | grep -o '[0-9]*')
+
+            if [ "$CUR_PORT" = "3001" ]; then
+              NEW_PORT=3002
+              OLD_NAME=my-next-app-blue
+              NEW_NAME=my-next-app-green
+            else
+              NEW_PORT=3001
+              OLD_NAME=my-next-app-green
+              NEW_NAME=my-next-app-blue
+            fi
+
+            echo "[배포] $OLD_NAME ($CUR_PORT) → $NEW_NAME ($NEW_PORT)"
+
+            # 1. 새 이미지 pull
+            docker pull $IMAGE
+
+            # 2. 새 컨테이너 띄우기
+            docker run -d --name $NEW_NAME -p $NEW_PORT:3000 $IMAGE
+
+            # 3. health check (10초 이내 OK 응답)
+            for i in {1..10}; do
+              curl -fs http://localhost:$NEW_PORT/ && break || sleep 1
+            done
+
+            # 4. nginx proxy_pass 포트 교체
+            sed -i "s/$CUR_PORT/$NEW_PORT/g" $NGINX_CONF
+            sudo nginx -s reload
+
+            # 5. 이전 컨테이너 정리
+            docker stop $OLD_NAME || true
+            docker rm $OLD_NAME || true
+
