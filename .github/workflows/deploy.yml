@@ -42,7 +42,7 @@ jobs:
       - name: Blue/Green Deploy on server via SSH
         uses: appleboy/ssh-action@master
         env:
-          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/my-next-app:latest
+          DOCKER_IMAGE: "spelar7/my-next-app:latest"
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
