@@ -48,7 +48,9 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            echo "[DEBUG] \$DOCKER_IMAGE = $DOCKER_IMAGE"
             IMAGE="$DOCKER_IMAGE"
+            echo "[DEBUG] IMAGE = $IMAGE"
             NGINX_CONF="/etc/nginx/conf.d/my-next-app.conf"
 
             # 현재 nginx가 바라보는 포트 추출
@@ -84,4 +86,3 @@ jobs:
             # 5. 이전 컨테이너 정리
             docker stop $OLD_NAME || true
             docker rm $OLD_NAME || true
-
