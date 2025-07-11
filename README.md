@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Next.js Blue/Green Deployment Project
 
-## Getting Started  
+## 프로젝트 개요
 
-First, run the development server:
+이 프로젝트는 **Next.js** 기반의 웹 서비스를
+- **Docker** 컨테이너로 빌드하고,
+- **Nginx**로 Reverse Proxy를 구성하여,
+- **Linux 서버**(예: Ubuntu)에
+- **Blue/Green 무중단 배포** 방식으로 운영하도록 자동화된 인프라/배포 환경을 구축합니다.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+CI/CD 자동화에는 **GitHub Actions**를 사용하며,
+최종적으로 **DNS 설정 및 TLS(HTTPS) 인증서 적용**까지 아우릅니다.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 기술 스택
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **프레임워크**: [Next.js](https://nextjs.org/)
+- **웹 서버/Proxy**: [Nginx](https://nginx.org/)
+- **OS**: Linux (예: Ubuntu 22.04)
+- **컨테이너**: Docker
+- **CI/CD**: GitHub Actions
+- **배포 전략**: Blue/Green Deployment
+- **도메인/DNS**: 자체 도메인 + A 레코드 연결
+- **TLS 인증서**: Let's Encrypt (무료 SSL)
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
