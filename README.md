@@ -21,7 +21,9 @@ CI/CD 자동화에는 **GitHub Actions**를 사용하며,
 - **컨테이너**: Docker
 - **CI/CD**: GitHub Actions
 - **배포 전략**: Blue/Green Deployment
-- **도메인/DNS**: 자체 도메인 + A 레코드 연결
+- **도메인/DNS**:  
+  - [https://spelar.shop](https://spelar.shop)  
+  - [https://www.spelar.shop](https://www.spelar.shop)
 - **TLS 인증서**: Let's Encrypt (무료 SSL)
 
 ---
