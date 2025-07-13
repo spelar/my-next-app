@@ -82,3 +82,6 @@ jobs:
             # 5. 이전 컨테이너 정리
             docker stop $OLD_NAME || true
             docker rm $OLD_NAME || true
+
+            # 6. 사용하지 않는 이미지(태그 없는 이미지) 정리
+            docker image prune -f
