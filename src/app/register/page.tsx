@@ -5,6 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) {
+  throw new Error("API URL이 설정되지 않았습니다. 환경변수를 확인하세요.");
+}
+
 export default function RegisterPage() {
   const [form, setForm] = useState({ email: "", password: "", name: "" });
   const [loading, setLoading] = useState(false);
@@ -40,7 +45,7 @@ export default function RegisterPage() {
     setError("");
     setSuccess("");
     try {
-      const res = await fetch("http://localhost:4000/user/register", {
+      const res = await fetch(`${API_URL}/user/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
