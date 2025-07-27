@@ -30,6 +30,7 @@ export default function List({ data }: ListProps) {
                           width={60}
                           height={87}
                           alt={item.title + `책 이미지`}
+                          unoptimized
                         />
                       ) : (
                         <Image
@@ -39,6 +40,7 @@ export default function List({ data }: ListProps) {
                           width={60}
                           height={87}
                           alt={"책 이미지 없음"}
+                          unoptimized
                         />
                       )}
                     </div>
