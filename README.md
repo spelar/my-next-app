@@ -26,7 +26,7 @@ CI/CD 자동화에는 **GitHub Actions**를 사용하며,
 - **CI/CD**: GitHub Actions
 - **배포 전략**: Blue/Green Deployment
 - **도메인/DNS**:  
-  - [https://spelar.shop](https://spelar.shop)  
+  - [https://spelar.shop](https://spelar.shop)
   - [https://www.spelar.shop](https://www.spelar.shop)
 - **TLS 인증서**: Let's Encrypt (무료 SSL)
 
