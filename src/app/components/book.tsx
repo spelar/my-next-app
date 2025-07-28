@@ -14,7 +14,7 @@ import List from "./common/list";
 
 export default function Book() {
   const [inputValue, setInputValue] = useState<string>("");
-  const { ref, inView } = useInView({ threshold: 0.3 });
+  const { ref, inView } = useInView({ threshold: 0.7 });
   const {
     data,
     refetch: getBooks,
@@ -100,8 +100,6 @@ export default function Book() {
 }
 
 const BookWrapper = styled.div`
-  overflow-y: auto;
   margin: 0 auto;
   max-width: 768px;
-  max-height: 1000px;
 `; 
