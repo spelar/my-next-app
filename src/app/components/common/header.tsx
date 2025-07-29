@@ -17,7 +17,7 @@ export default function Header({
   return (
     <React.Fragment>
       <HeaderWrapper>
-        <Logo>MoMentum</Logo>
+        <Logo onClick={() => window.location.reload()}>MoMentum</Logo>
         <label htmlFor="searchInput" className="blind">
           검색어 입력
         </label>
@@ -49,6 +49,7 @@ const HeaderWrapper = styled.div`
 `;
 
 const Logo = styled.h1`
+  cursor: pointer;
   height: 48px;
   padding-left: 15px;
   color: #fff;
