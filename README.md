@@ -13,7 +13,7 @@
 - **Blue/Green 무중단 배포** 방식으로 운영하도록 자동화된 인프라/배포 환경을 구축합니다.
 
 CI/CD 자동화에는 **GitHub Actions**를 사용하며,
-최종적으로 **DNS 설정 및 TLS(HTTPS) 인증서 적용**까지 아우릅니다.
+최종적으로 **DNS 설정 및 TLS(HTTPS) 인증서를 적용**합니다.
 
 ---
 
@@ -26,8 +26,8 @@ CI/CD 자동화에는 **GitHub Actions**를 사용하며,
 - **CI/CD**: GitHub Actions
 - **배포 전략**: Blue/Green Deployment
 - **도메인/DNS**:  
-  - [https://spelar.shop](https://spelar.shop)
-  - [https://www.spelar.shop](https://www.spelar.shop)
+  - [https://spelar.store](https://spelar.store)
+  - [https://www.spelar.store](https://www.spelar.store)
 - **TLS 인증서**: Let's Encrypt (무료 SSL)
 
 ---
