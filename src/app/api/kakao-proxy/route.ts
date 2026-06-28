@@ -14,6 +14,12 @@ export async function GET(req: NextRequest) {
   const query = searchParams.get("query");
   const page = searchParams.get("page") || "1";
 
+  // 서버-사이드 호출에는 브라우저 Origin이 없으므로, 요청 Host로 origin을 만들어
+  // KA 헤더에 명시한다. 이 도메인은 카카오 앱의 Web 플랫폼에 등록돼 있어야 한다.
+  const host = req.headers.get("host") ?? "spelar.store";
+  const proto = host.startsWith("localhost") ? "http" : "https";
+  const origin = `${proto}://${host}`;
+
   const kakaoRes = await fetch(
     `https://dapi.kakao.com/v3/search/book?query=${encodeURIComponent(
       query || ""
@@ -21,7 +27,9 @@ export async function GET(req: NextRequest) {
     {
       headers: {
         Authorization: `KakaoAK ${apiKey}`,
-        KA: "sdk/1.0 os/javascript",
+        KA: `sdk/1.0.0 os/javascript lang/ko-KR origin/${encodeURIComponent(
+          origin
+        )}`,
       },
     }
   );
