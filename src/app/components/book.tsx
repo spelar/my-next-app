@@ -1,19 +1,18 @@
 "use client";
 
-import React from "react";
-import { useCallback, useEffect, useState } from "react";
-import styled from "@emotion/styled";
+import React, { useCallback, useEffect, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useInView } from "react-intersection-observer";
 import Header from "./common/header";
+import List from "./common/list";
+import SkeletonElement from "./common/skeletonElement";
 import useFetchBooks from "@/hooks/useFetchBooks";
 import { queryClient } from "../ReactQuery";
 import { queryKeys } from "@/react-query/constants";
-import { ToastContainer, toast } from "react-toastify";
-import { useInView } from "react-intersection-observer";
-import SkeletonElement from "./common/skeletonElement";
-import List from "./common/list";
 
 export default function Book() {
-  const [inputValue, setInputValue] = useState<string>("");
+  const [inputValue, setInputValue] = useState("");
   const { ref, inView } = useInView({ threshold: 0.7 });
   const {
     data,
@@ -27,19 +26,28 @@ export default function Book() {
   } = useFetchBooks(inputValue);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     if (inView && hasNextPage) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage]);
+
+  // 부수효과는 렌더 중이 아니라 effect에서 — 리렌더마다 토스트 중복 방지
+  useEffect(() => {
+    if (isError && error) {
+      const message =
+        error?.response?.data?.message ??
+        "검색 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
+      toast.error(message);
+    }
+  }, [isError, error]);
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
 
   const onSearchClick = useCallback(() => {
-    if (inputValue === "") {
-      alert("검색어를 입력해주세요.");
+    if (inputValue.trim() === "") {
+      toast.info("검색어를 입력해 주세요.");
       return;
     }
     queryClient.resetQueries({ queryKey: [queryKeys.books] });
@@ -52,54 +60,33 @@ export default function Book() {
     }
   };
 
-  if (isError && error) {
-    toast.error(error.response.data.message, {
-      position: "top-right",
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
-    });
-  }
+  // 로고 클릭 시 전체 새로고침 대신 클라이언트 상태만 리셋 (SPA 경험 유지)
+  const onLogoReset = useCallback(() => {
+    setInputValue("");
+    queryClient.resetQueries({ queryKey: [queryKeys.books] });
+  }, []);
 
   return (
-    <BookWrapper>
+    <main className="min-h-screen bg-slate-50">
       <Header
         onInputChange={onInputChange}
         inputValue={inputValue}
         onSearchClick={onSearchClick}
         onInputKeyDown={onInputKeyDown}
+        onLogoReset={onLogoReset}
       />
+
       {!data && isFetching && <SkeletonElement />}
       {data && <List data={data} />}
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-      <div>
-        <div>
-          <span ref={ref}></span>
+      {!data && !isFetching && (
+        <div className="flex flex-col items-center justify-center gap-2 py-24 text-center text-slate-400">
+          <p className="text-base">검색어를 입력해 책을 찾아보세요</p>
         </div>
-        <div>
-          {isFetchingNextPage && <SkeletonElement />}
-        </div>
-      </div>
-    </BookWrapper>
+      )}
+      {isFetchingNextPage && <SkeletonElement />}
+
+      <span ref={ref} aria-hidden className="block h-1" />
+      <ToastContainer position="top-right" autoClose={4000} theme="light" />
+    </main>
   );
 }
-
-const BookWrapper = styled.div`
-  margin: 0 auto;
-  max-width: 768px;
-`; 

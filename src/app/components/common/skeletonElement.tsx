@@ -1,51 +1,24 @@
-import Skeleton from "react-loading-skeleton";
-import { useState } from "react";
-import styled from "@emotion/styled";
-import "react-loading-skeleton/dist/skeleton.css";
+const SKELETONS = Array.from({ length: 10 });
 
 export default function SkeletonElement() {
-  const [skeletonCount] = useState<number[]>([1, 2, 3]);
   return (
-    <div
+    <section
       data-testid="skeleton-element"
-      style={{ margin: "0px auto 0", maxWidth: "768px" }}
+      className="mx-auto max-w-screen-xl px-4 py-6"
     >
-      {skeletonCount.map((i) => {
-        return (
-          <div style={{ display: "flex", alignItems: "center", minHeight: 87, marginBottom: 16, paddingLeft: 20 }} key={`skeleton-${i}`}>
-            <ImageWrap>
-              <Skeleton height={87} width={60} style={{ marginTop: 0 }} baseColor="#e5e7eb" highlightColor="#f3f4f6" />
-            </ImageWrap>
-            <TextWrap>
-              <Skeleton
-                count={2}
-                width={180}
-                height={20}
-                style={{ marginTop: 10, marginBottom: 8 }}
-                baseColor="#e5e7eb"
-                highlightColor="#f3f4f6"
-              />
-            </TextWrap>
-          </div>
-        );
-      })}
-    </div>
+      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {SKELETONS.map((_, i) => (
+          <li
+            key={i}
+            className="rounded-xl border border-slate-200 bg-white p-3"
+          >
+            <div className="mb-3 aspect-[3/4] animate-pulse rounded-lg bg-slate-200" />
+            <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200" />
+            <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-200" />
+            <div className="mt-3 h-4 w-1/3 animate-pulse rounded bg-slate-200" />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
-
-const ImageWrap = styled.p`
-  display: flex;
-  flex-direction: column;
-  width: 60px;
-  min-width: 60px;
-  min-height: 87px;
-`;
-
-const TextWrap = styled.p`
-  flex: 1;
-  margin-top: 5px;
-  margin-left: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`; 

@@ -1,11 +1,12 @@
 import React from "react";
-import styled from "@emotion/styled";
+import { BookOpen, Search } from "lucide-react";
 
 interface HeaderProps {
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSearchClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   inputValue: string;
   onInputKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onLogoReset?: () => void;
 }
 
 export default function Header({
@@ -13,82 +14,49 @@ export default function Header({
   onSearchClick,
   inputValue,
   onInputKeyDown,
+  onLogoReset,
 }: HeaderProps) {
   return (
-    <React.Fragment>
-      <HeaderWrapper>
-        <Logo onClick={() => window.location.reload()}>MoMentum</Logo>
-        <label htmlFor="searchInput" className="blind">
-          검색어 입력
-        </label>
-        <HeaderSearch>
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-screen-xl items-center gap-3 px-4 sm:gap-6">
+        <button
+          type="button"
+          onClick={onLogoReset}
+          aria-label="Spelar 홈 — 검색 초기화"
+          className="flex shrink-0 items-center gap-2 text-lg font-bold text-slate-900"
+        >
+          <BookOpen className="h-5 w-5 text-blue-600" aria-hidden />
+          <span>Spelar</span>
+        </button>
+
+        <div className="relative flex-1">
+          <label htmlFor="searchInput" className="sr-only">
+            검색어 입력
+          </label>
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            aria-hidden
+          />
           <input
             id="searchInput"
             type="text"
-            className="input"
             title="검색어 입력"
-            placeholder="책을 검색해 보세요."
-            onChange={onInputChange}
+            placeholder="책을 검색해 보세요"
             value={inputValue}
-            autoComplete="off"
+            onChange={onInputChange}
             onKeyDown={onInputKeyDown}
+            autoComplete="off"
+            className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-20 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           />
-          <button className="btnSearch" onClick={onSearchClick}>
+          <button
+            type="button"
+            onClick={onSearchClick}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md bg-blue-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+          >
             검색
           </button>
-        </HeaderSearch>
-      </HeaderWrapper>
-    </React.Fragment>
+        </div>
+      </div>
+    </header>
   );
 }
-
-const HeaderWrapper = styled.div`
-  width: 100%;
-  height: auto;
-  background-color: #1ab1ff;
-`;
-
-const Logo = styled.h1`
-  cursor: pointer;
-  height: 48px;
-  padding-left: 15px;
-  color: #fff;
-  line-height: 48px;
-  font-size: 20px;
-  font-weight: 700;
-  font-family: sans-serif;
-`;
-
-const HeaderSearch = styled.div`
-  position: relative;
-  width: 100%;
-  padding: 10px 15px 10px;
-  background-color: #1ab1ff;
-  box-sizing: border-box;
-  input {
-    width: 100%;
-    height: 42px;
-    padding: 0 42px 0px 12px;
-    border: 0;
-    background-color: #fff;
-    font-weight: normal;
-    font-size: 17px;
-    line-height: 26px;
-    color: #000;
-    border-radius: 4px;
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
-    -webkit-appearance: none;
-  }
-  button {
-    position: absolute;
-    top: 10px;
-    right: 14px;
-    width: 42px;
-    height: 42px;
-    background-color: #e6e6e6;
-    border-left: 1px solid #b9b9b9;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-  }
-`; 

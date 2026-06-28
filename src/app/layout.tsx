@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ReactQuery from "./ReactQuery";
-import EmotionRegistry from "./EmotionRegistry";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Spelar | 책 검색",
-  description: "카카오 책 검색 API 기반 도서 검색 서비스 — 무한 스크롤로 책을 빠르게 탐색하세요.",
+  description:
+    "카카오 책 검색 API 기반 도서 검색 서비스 — 무한 스크롤로 책을 빠르게 탐색하세요.",
 };
 
 export default function RootLayout({
@@ -27,11 +27,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-slate-50 text-slate-900 antialiased`}
       >
-        <EmotionRegistry>
-          <ReactQuery>{children}</ReactQuery>
-        </EmotionRegistry>
+        <ReactQuery>{children}</ReactQuery>
       </body>
     </html>
   );
