@@ -32,8 +32,7 @@ jobs:
 
       - name: Create .env.production from secrets
         run: |
-          echo "NEXT_PUBLIC_KAKAO_API_KEY=${{ secrets.NEXT_PUBLIC_KAKAO_API_KEY }}" > .env.production
-          echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" > .env.production
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -51,7 +50,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            IMAGE="spelar7/my-next-app:latest"
+            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/my-next-app:latest"
             NGINX_CONF="/etc/nginx/conf.d/my-next-app.conf"
 
             # 현재 nginx가 바라보는 포트 추출
@@ -72,8 +71,10 @@ jobs:
             # 1. 새 이미지 pull
             docker pull $IMAGE
 
-            # 2. 새 컨테이너 띄우기
-            docker run -d --name $NEW_NAME -p $NEW_PORT:3000 $IMAGE
+            # 2. 새 컨테이너 띄우기 (카카오 키는 런타임 주입 — 이미지에 굽지 않음)
+            docker run -d --name $NEW_NAME -p $NEW_PORT:3000 \
+              -e KAKAO_API_KEY="${{ secrets.KAKAO_API_KEY }}" \
+              $IMAGE
 
             # 3. health check (10초 이내 OK 응답)
             for i in {1..10}; do

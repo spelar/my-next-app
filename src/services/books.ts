@@ -5,8 +5,8 @@ export const getBooks = async (
   query: string | null,
   page: number
 ): Promise<BookResponse> => {
-  const { data } = await axiosInstance.get(
-    `/v3/search/book?query=${query}&page=${page}`
-  );
+  const { data } = await axiosInstance.get("", {
+    params: { query, page },
+  });
   return data;
 }; 
