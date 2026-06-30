@@ -1,59 +1,30 @@
-import { useInfiniteQuery, InfiniteData } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/react-query/constants";
 import { BookResponse } from "@/types/books";
 import { BookResponseError } from "@/types/error";
 import { getBooks } from "@/services/books";
 
-function useFetchBooks(query: string): {
-  data: InfiniteData<BookResponse, unknown> | undefined;
-  refetch: ReturnType<typeof useInfiniteQuery>["refetch"];
-  hasNextPage: boolean | undefined;
-  fetchNextPage: ReturnType<typeof useInfiniteQuery>["fetchNextPage"];
-  isFetchingNextPage: boolean;
-  isFetching: boolean;
-  isError: boolean;
-  error: BookResponseError | null;
-  isSuccess: boolean;
-} {
-  const {
-    data,
-    refetch,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-    isFetching,
-    isError,
-    error,
-    isSuccess,
-  } = useInfiniteQuery<BookResponse, BookResponseError>(
-    {
-      queryKey: [queryKeys.books, query],
-      queryFn: ({ pageParam }: { pageParam: unknown }) => getBooks(query ? query : null, typeof pageParam === "number" ? pageParam : 1),
-      getNextPageParam: (lastPage: BookResponse, allPages: BookResponse[]) => {
-        if (lastPage && lastPage.meta && lastPage.meta.total_count) {
-          const maxPage = lastPage.meta.total_count / 10;
-          const nextPage = allPages.length + 1;
-          return nextPage <= maxPage ? nextPage : undefined;
-        }
-        return undefined;
-      },
-      initialPageParam: 1,
-      retry: false,
-      enabled: false,
-    }
-  );
+const MIN_QUERY_LENGTH = 2;
 
-  return {
-    data,
-    refetch,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-    isFetching,
-    isError,
-    error,
-    isSuccess,
-  };
+/**
+ * 검색어(query)가 바뀌면 자동으로 페칭한다.
+ * - queryKey에 검색어를 넣어 키 변경 시 React Query가 자동 재조회
+ * - 2글자 이상일 때만 활성화(enabled)
+ * - queryFn의 signal을 전달해 입력이 바뀌면 이전 요청 취소
+ */
+function useFetchBooks(query: string) {
+  const trimmed = query.trim();
+
+  return useInfiniteQuery<BookResponse, BookResponseError>({
+    queryKey: [queryKeys.books, trimmed],
+    queryFn: ({ pageParam, signal }) =>
+      getBooks(trimmed, typeof pageParam === "number" ? pageParam : 1, signal),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.meta.is_end ? undefined : allPages.length + 1,
+    initialPageParam: 1,
+    retry: false,
+    enabled: trimmed.length >= MIN_QUERY_LENGTH,
+  });
 }
 
-export default useFetchBooks; 
+export default useFetchBooks;

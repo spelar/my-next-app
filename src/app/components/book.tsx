@@ -8,36 +8,43 @@ import Header from "./common/header";
 import List from "./common/list";
 import SkeletonElement from "./common/skeletonElement";
 import useFetchBooks from "@/hooks/useFetchBooks";
-import { queryClient } from "../ReactQuery";
-import { queryKeys } from "@/react-query/constants";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function Book() {
   const [inputValue, setInputValue] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedValue = useDebounce(inputValue, 350);
   const { ref, inView } = useInView({ threshold: 0.7 });
+
   const {
     data,
-    refetch: getBooks,
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
     isFetching,
     error,
     isError,
-  } = useFetchBooks(inputValue);
+  } = useFetchBooks(searchTerm);
 
+  // 입력이 멈추면(디바운스) 자동 검색
+  useEffect(() => {
+    setSearchTerm(debouncedValue.trim());
+  }, [debouncedValue]);
+
+  // 무한 스크롤
   useEffect(() => {
     if (inView && hasNextPage) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage]);
 
-  // 부수효과는 렌더 중이 아니라 effect에서 — 리렌더마다 토스트 중복 방지
+  // 에러 토스트는 렌더가 아니라 effect에서
   useEffect(() => {
     if (isError && error) {
-      const message =
+      toast.error(
         error?.response?.data?.message ??
-        "검색 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
-      toast.error(message);
+          "검색 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요."
+      );
     }
   }, [isError, error]);
 
@@ -45,26 +52,24 @@ export default function Book() {
     setInputValue(e.target.value);
   };
 
+  // 버튼/Enter는 디바운스를 기다리지 않고 즉시 검색
   const onSearchClick = useCallback(() => {
-    if (inputValue.trim() === "") {
-      toast.info("검색어를 입력해 주세요.");
-      return;
-    }
-    queryClient.resetQueries({ queryKey: [queryKeys.books] });
-    getBooks();
-  }, [inputValue, getBooks]);
+    setSearchTerm(inputValue.trim());
+  }, [inputValue]);
 
   const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      onSearchClick();
+      setSearchTerm(inputValue.trim());
     }
   };
 
-  // 로고 클릭 시 전체 새로고침 대신 클라이언트 상태만 리셋 (SPA 경험 유지)
   const onLogoReset = useCallback(() => {
     setInputValue("");
-    queryClient.resetQueries({ queryKey: [queryKeys.books] });
+    setSearchTerm("");
   }, []);
+
+  const showSkeleton = isFetching && !data;
+  const showInitial = !isFetching && !data;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -76,11 +81,11 @@ export default function Book() {
         onLogoReset={onLogoReset}
       />
 
-      {!data && isFetching && <SkeletonElement />}
+      {showSkeleton && <SkeletonElement />}
       {data && <List data={data} />}
-      {!data && !isFetching && (
+      {showInitial && (
         <div className="flex flex-col items-center justify-center gap-2 py-24 text-center text-slate-400">
-          <p className="text-base">검색어를 입력해 책을 찾아보세요</p>
+          <p className="text-base">검색어를 입력하면 자동으로 검색돼요</p>
         </div>
       )}
       {isFetchingNextPage && <SkeletonElement />}
