@@ -5,17 +5,24 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useInView } from "react-intersection-observer";
 import Header from "./common/header";
+import SearchAutocomplete from "./common/SearchAutocomplete";
 import List from "./common/list";
 import SkeletonElement from "./common/skeletonElement";
 import useFetchBooks from "@/hooks/useFetchBooks";
+import useSearchSuggestions from "@/hooks/useSearchSuggestions";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export default function Book() {
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const debouncedValue = useDebounce(inputValue, 350);
+  const debouncedValue = useDebounce(inputValue, 300);
   const { ref, inView } = useInView({ threshold: 0.7 });
 
+  // 자동완성 드롭다운(상위 6개) — 타이핑 시
+  const { data: suggestions = [], isFetching: suggestionsLoading } =
+    useSearchSuggestions(debouncedValue);
+
+  // 전체 그리드 — 검색 확정 시(검색 버튼/Enter)
   const {
     data,
     hasNextPage,
@@ -26,19 +33,12 @@ export default function Book() {
     isError,
   } = useFetchBooks(searchTerm);
 
-  // 입력이 멈추면(디바운스) 자동 검색
-  useEffect(() => {
-    setSearchTerm(debouncedValue.trim());
-  }, [debouncedValue]);
-
-  // 무한 스크롤
   useEffect(() => {
     if (inView && hasNextPage) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage]);
 
-  // 에러 토스트는 렌더가 아니라 effect에서
   useEffect(() => {
     if (isError && error) {
       toast.error(
@@ -48,20 +48,9 @@ export default function Book() {
     }
   }, [isError, error]);
 
-  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  // 버튼/Enter는 디바운스를 기다리지 않고 즉시 검색
-  const onSearchClick = useCallback(() => {
-    setSearchTerm(inputValue.trim());
-  }, [inputValue]);
-
-  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      setSearchTerm(inputValue.trim());
-    }
-  };
+  const onSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
 
   const onLogoReset = useCallback(() => {
     setInputValue("");
@@ -73,19 +62,21 @@ export default function Book() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <Header
-        onInputChange={onInputChange}
-        inputValue={inputValue}
-        onSearchClick={onSearchClick}
-        onInputKeyDown={onInputKeyDown}
-        onLogoReset={onLogoReset}
-      />
+      <Header onLogoReset={onLogoReset}>
+        <SearchAutocomplete
+          value={inputValue}
+          onChange={setInputValue}
+          onSearch={onSearch}
+          suggestions={suggestions}
+          loading={suggestionsLoading}
+        />
+      </Header>
 
       {showSkeleton && <SkeletonElement />}
       {data && <List data={data} />}
       {showInitial && (
         <div className="flex flex-col items-center justify-center gap-2 py-24 text-center text-slate-400">
-          <p className="text-base">검색어를 입력하면 자동으로 검색돼요</p>
+          <p className="text-base">검색어를 입력해 책을 찾아보세요</p>
         </div>
       )}
       {isFetchingNextPage && <SkeletonElement />}
