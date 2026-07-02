@@ -68,7 +68,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-next-app:latest
           cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
 
       - name: Blue/Green Deploy on server via SSH
         uses: appleboy/ssh-action@master
@@ -77,44 +77,52 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            set -e
             IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/my-next-app:latest"
             NGINX_CONF="/etc/nginx/conf.d/my-next-app.conf"
 
-            # 현재 nginx가 바라보는 포트 추출
-            CUR_PORT=$(grep -o 'proxy_pass http://localhost:[0-9]*' $NGINX_CONF | grep -o '[0-9]*')
+            # 현재 nginx가 바라보는 포트 추출 (없으면 빈 값 → else 분기)
+            CUR_PORT=$(grep -o 'proxy_pass http://localhost:[0-9]*' $NGINX_CONF | grep -o '[0-9]*' || true)
 
             if [ "$CUR_PORT" = "3001" ]; then
-              NEW_PORT=3002
-              OLD_NAME=my-next-app-blue
-              NEW_NAME=my-next-app-green
+              NEW_PORT=3002; OLD_NAME=my-next-app-blue; NEW_NAME=my-next-app-green
             else
-              NEW_PORT=3001
-              OLD_NAME=my-next-app-green
-              NEW_NAME=my-next-app-blue
+              NEW_PORT=3001; OLD_NAME=my-next-app-green; NEW_NAME=my-next-app-blue
             fi
 
-            echo "[배포] $OLD_NAME ($CUR_PORT) → $NEW_NAME ($NEW_PORT)"
+            echo "[배포] 현재 포트 $CUR_PORT → 새 컨테이너 $NEW_NAME ($NEW_PORT)"
 
-            # 1. 새 이미지 pull
-            docker pull $IMAGE
+            # 1) 새 이미지 pull
+            docker pull "$IMAGE"
 
-            # 2. 새 컨테이너 띄우기 (카카오 키는 런타임 주입 — 이미지에 굽지 않음)
-            docker run -d --name $NEW_NAME -p $NEW_PORT:3000 \
+            # 2) 동명/이전 실패 잔재 컨테이너 제거 (멱등성 확보 — 이름 충돌 방지)
+            docker rm -f "$NEW_NAME" 2>/dev/null || true
+
+            # 3) 새 컨테이너 기동 (카카오 키는 런타임 주입)
+            docker run -d --name "$NEW_NAME" -p "$NEW_PORT":3000 \
               -e KAKAO_API_KEY="${{ secrets.KAKAO_API_KEY }}" \
-              $IMAGE
+              "$IMAGE"
 
-            # 3. health check (10초 이내 OK 응답)
-            for i in {1..10}; do
-              curl -fs http://localhost:$NEW_PORT/ && break || sleep 1
+            # 4) 헬스체크 — 최대 30초. 실패하면 nginx를 바꾸지 않고 롤백(무중단 보장)
+            OK=0
+            for i in $(seq 1 15); do
+              if curl -fs "http://localhost:$NEW_PORT/" >/dev/null; then OK=1; break; fi
+              sleep 2
             done
+            if [ "$OK" != "1" ]; then
+              echo "[실패] 새 컨테이너 헬스체크 실패 → 롤백(기존 유지)"
+              docker logs --tail 50 "$NEW_NAME" || true
+              docker rm -f "$NEW_NAME" || true
+              exit 1
+            fi
 
-            # 4. nginx proxy_pass 포트 교체
-            sed -i "s/$CUR_PORT/$NEW_PORT/g" $NGINX_CONF
+            # 5) nginx proxy_pass 포트 교체 후 문법 검증하고 reload
+            sed -i "s#localhost:$CUR_PORT#localhost:$NEW_PORT#g" "$NGINX_CONF"
+            sudo nginx -t
             sudo nginx -s reload
 
-            # 5. 이전 컨테이너 정리
-            docker stop $OLD_NAME || true
-            docker rm $OLD_NAME || true
+            # 6) 이전 컨테이너 정리
+            docker rm -f "$OLD_NAME" 2>/dev/null || true
 
-            # 6. 사용하지 않는 이미지(태그 없는 이미지) 정리
-            docker image prune -f
+            # 7) 태그 없는 이미지 정리
+            docker image prune -f || true
