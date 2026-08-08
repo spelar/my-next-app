@@ -1,12 +1,12 @@
 # 1) 의존성 설치
-FROM node:18-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
 RUN npm install -g pnpm \
     && pnpm install --frozen-lockfile
 
 # 2) 빌드 (Next.js standalone 산출물 생성)
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
@@ -15,7 +15,7 @@ RUN npm install -g pnpm \
     && pnpm run build
 
 # 3) 실행 - standalone 산출물만 복사(pnpm .pnpm 하드링크 스토어 미포함 → 레이어 추출 문제 원천 제거)
-FROM node:18-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -23,9 +23,17 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# 비특권 사용자로 실행 — 침해 시 /root, /etc 쓰기 및 지속성 확보를 차단
+RUN addgroup -g 1001 -S nodejs \
+    && adduser -S nextjs -u 1001 \
+    && mkdir -p .next/cache \
+    && chown -R nextjs:nodejs .next
+
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
 
 EXPOSE 3000
 
