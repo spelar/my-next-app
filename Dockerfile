@@ -2,7 +2,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
-RUN npm install -g pnpm \
+RUN npm install -g pnpm@10.12.4 \
     && pnpm install --frozen-lockfile
 
 # 2) 빌드 (Next.js standalone 산출물 생성)
@@ -11,7 +11,7 @@ WORKDIR /app
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 COPY .env.production .env.production
-RUN npm install -g pnpm \
+RUN npm install -g pnpm@10.12.4 \
     && pnpm run build
 
 # 3) 실행 - standalone 산출물만 복사(pnpm .pnpm 하드링크 스토어 미포함 → 레이어 추출 문제 원천 제거)
