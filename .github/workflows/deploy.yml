@@ -99,7 +99,8 @@ jobs:
             docker rm -f "$NEW_NAME" 2>/dev/null || true
 
             # 3) 새 컨테이너 기동 (카카오 키는 런타임 주입)
-            docker run -d --name "$NEW_NAME" --restart unless-stopped -p "$NEW_PORT":3000 \
+            # 127.0.0.1 바인딩 — nginx만 접근 가능, 인터넷에서 직접 접근 차단
+            docker run -d --name "$NEW_NAME" --restart unless-stopped -p 127.0.0.1:"$NEW_PORT":3000 \
               -e KAKAO_API_KEY="${{ secrets.KAKAO_API_KEY }}" \
               "$IMAGE"
 
